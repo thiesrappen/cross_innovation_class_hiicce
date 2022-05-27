@@ -1,42 +1,49 @@
+import logging
 import time
 import random
-import yaml
+import configparser
 
-#configuration parameters
+# configuration parameters
 poll_rate_seconds = 4
 number_of_flower_beds = 2
+minimum_soil_humidity = 0.5
+display_log = True
 
-#return a random value between 0 and 1 for testing purposes
+
+# return a random value between 0 and 1 for testing purposes
 def measure_humidity_levels():
-    returnlist =[]
+    returns = []
     for i in range(number_of_flower_beds):
-        returnlist.append(round(random.uniform(0, 1), 2))
-    return returnlist
+        returns.append(round(random.uniform(0, 1), 2))
+    return returns
 
+
+# returns True, when watering was successful
 def watering_routine(flower_bed_index):
-    print("Flower bed ", flower_bed_index, " watered")
-    return True;
+    #do something
+    return True
 
-def load_configuration():
-    
 
-load_configuration()
+def log(log_message):
+    if display_log:
+        print(time.asctime(), "-->", log_message)
 
-#main routine
-while(True):
-    print(time.asctime())
+
+# main routine
+while True:
+    log("Routine started.")
     humidity_levels = measure_humidity_levels()
+    log("Humidity levels: " + str(humidity_levels))
     one_container_watered = False
-    for index, humidity in enumerate(humidity_levels):
-        if(humidity<=0.2):
-            print("Trocken")
-            if(not one_container_watered):
-                watering_routine(index)
-                one_container_watered = True
+    for flower_bed_index, flower_box_humidity in enumerate(humidity_levels):
+        if flower_box_humidity < minimum_soil_humidity:
+            log("Flower box #" + str(flower_bed_index) + " is to dry. Humidity: " + str(flower_box_humidity))
+            if watering_routine(flower_bed_index):
+                log("Flower bed #" + str(flower_bed_index) + " successfully watered.")
             else:
-                print("There already was one watering this loop. Other containers can get water next time. This is to preserve the battery.")
+                log("Error during watering")
         else:
-            #ignore this conatiner
-            print("Feucht genug")
+            # ignore this flower bed
+            log("Flower box #" + str(flower_bed_index) + " is still wet enough. Humidity: " + str(flower_box_humidity))
+    log("Routine finished.\n")
     time.sleep(poll_rate_seconds)
-    
