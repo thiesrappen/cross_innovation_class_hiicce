@@ -14,7 +14,7 @@ display_log = True
 def measure_humidity_levels():
     returns = []
     for i in range(number_of_flower_beds):
-        returns.append(round(random.uniform(0, 1), 2))
+        returns.append((round(random.uniform(0, 1)), i))
     return returns
 
 
@@ -35,7 +35,7 @@ while True:
     humidity_levels = measure_humidity_levels()
     log("Humidity levels: " + str(humidity_levels))
     one_container_watered = False
-    for flower_bed_index, flower_box_humidity in enumerate(humidity_levels):
+    for flower_box_humidity, flower_bed_index in humidity_levels:
         if flower_box_humidity < minimum_soil_humidity:
             log("Flower box #" + str(flower_bed_index) + " is to dry. Humidity: " + str(flower_box_humidity))
             if watering_routine(flower_bed_index):
