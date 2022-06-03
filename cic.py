@@ -24,6 +24,7 @@ def measureHumidityLevels():
 
 # returns True, when watering was successful
 def watering(bedIndex):
+<<<<<<< refs/remotes/origin/main
     # check if container is not empty
     # TODO sensor-using
     waterLevel = 0.35
@@ -45,10 +46,16 @@ def watering(bedIndex):
         return True
     else: 
         return False
+=======
+    # do something
+    return True
+
+>>>>>>> Changed language
 
 def log(message):
     if DISPLAY_LOG:
         print(time.asctime(), "-->", message)
+
 
 # stolen from stack overflow "https://raspberrypi.stackexchange.com/questions/7621/accessing-a-usb-drive-after-start-up-with-python"
 def mountUsbDrives():
@@ -66,23 +73,31 @@ def mountUsbDrives():
                 os.system('mkdir /mnt/usb 2>/dev/null')  # if already created don't output error.
                 os.system("mount /dev/%s1 /mnt/usb 2>/dev/null" % (deviceName))
 
+
 def searchForNewConfig():
     mountUsbDrives()
     os.chdir("/media/pi")
     drives = os.listdir(".")
+    output = ""
     for drive in drives:
         print(drive)
 
+    return output
 
 
 def updateConfiguration():
-    # if no drive is found, the defaults will be loaded
-    file = "./defaultConfig"
-
-
-
+    file = "" #searchForNewConfig()
+    # if no config is found, the defaults will be loaded
+    if file == "":
+        file = "defaultConfig.ini"
     configParser = configparser.ConfigParser()
     configParser.read(file)
+    POLL_RATE_SECONDS = configParser['config']['POLL_RATE_SECONDS']
+    FLOWER_BEDS = configParser['config']['FLOWER_BEDS']
+    SOIL_HUMIDITY = configParser['config']['SOIL_HUMIDITY']
+    WATERING_TIME = configParser['config']['WATERING_TIME']
+    MINIMUM_RESERVOIR_LEVEL = configParser['config']['MINIMUM_RESERVOIR_LEVEL']
+    DISPLAY_LOG = configParser['config']['DISPLAY_LOG']
 
 
 # main routine
