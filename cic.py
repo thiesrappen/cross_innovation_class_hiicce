@@ -8,6 +8,7 @@ POLL_RATE_SECONDS = 4
 FLOWER_BEDS = 2
 SOIL_HUMIDITY = 0.5
 WATERING_TIME = 5
+MINIMUM_WATERING_LEVEL = 0.2
 DISPLAY_LOG = True
 
 
@@ -16,21 +17,33 @@ def measureHumidityLevels():
     humidities = []
     for i in range(FLOWER_BEDS):
         # TODO sensor-using
-        # Random values
         humidities.append(round(random.uniform(0, 1), 2))
     return humidities
 
 
 # returns True, when watering was successful
 def watering(bedIndex):
+    # check if container is not empty
+    # TODO sensor-using
+    waterLevel = 0.35
+    if waterLevel <= MINIMUM_WATERING_LEVEL: 
+        return False
     # start pump
+    # TODO pump-control
     # open valve with bedIndex
+    # TODO valve-control
     time.sleep(WATERING_TIME)
     # stop pump
+    # TODO pump-control
     # close all valves
-    # check if water is flowed    
-    return True
-
+    # TODO valve-control
+    # check if water is flowed
+    # TODO sensor-using
+    newWaterLevel = 0.32
+    if newWaterLevel < waterLevel:
+        return True
+    else: 
+        return False
 
 def log(message):
     if DISPLAY_LOG:
