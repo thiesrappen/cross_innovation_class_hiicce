@@ -2,6 +2,7 @@ import logging
 import time
 import random
 import configparser
+import os
 
 # configuration parameters
 POLL_RATE_SECONDS = 4
@@ -49,20 +50,53 @@ def log(message):
     if DISPLAY_LOG:
         print(time.asctime(), "-->", message)
 
+# stolen from stack overflow "https://raspberrypi.stackexchange.com/questions/7621/accessing-a-usb-drive-after-start-up-with-python"
+def mountUsbDrives():
+    partitionsFile = open("/proc/partitions")
+    lines = partitionsFile.readlines()[2:]  # Skips the header lines
+    for line in lines:
+        words = [x.strip() for x in line.split()]
+        minorNumber = int(words[1])
+        deviceName = words[3]
+        if minorNumber % 16 == 0:
+            path = "/sys/class/block/" + deviceName
+        if os.path.islink(path):
+            if os.path.realpath(path).find("/usb") > 0:
+                print("/dev/%s1 -> /mnt/usb" % (deviceName))
+                os.system('mkdir /mnt/usb 2>/dev/null')  # if already created don't output error.
+                os.system("mount /dev/%s1 /mnt/usb 2>/dev/null" % (deviceName))
 
-def main():
-    while True:
-        log("Routine started.")
-        humidities = measureHumidityLevels()
-        log("Humidity levels: " + str(humidities))
-        for bedIndex, humidity in enumerate(humidities):
-            if humidity < SOIL_HUMIDITY:
-                # water the bed
-                log("Flower box #" + str(bedIndex) + " is to dry. Humidity: " + str(humidity))
-                if watering(bedIndex):
-                    log("Flower bed #" + str(bedIndex) + " successfully watered.")
-                else:
-                    log("Error during watering")
+def searchForNewConfig():
+    mountUsbDrives()
+    os.chdir("/media/pi")
+    drives = os.listdir(".")
+    for drive in drives:
+        print(drive)
+
+
+
+def updateConfiguration():
+    # if no drive is found, the defaults will be loaded
+    file = "./defaultConfig"
+
+
+
+    configParser = configparser.ConfigParser()
+    configParser.read(file)
+
+
+# main routine
+while True:
+    log("Routine started.")
+    updateConfiguration()
+    humidities = measureHumidityLevels()
+    log("Humidity levels: " + str(humidities))
+    for bedIndex, humidity in enumerate(humidities):
+        if humidity < SOIL_HUMIDITY:
+            # water the bed
+            log("Flower box #" + str(bedIndex) + " is to dry. Humidity: " + str(humidity))
+            if watering(bedIndex):
+                log("Flower bed #" + str(bedIndex) + " successfully watered.")
             else:
                 # ignore this flower bed
                 log("Flower box #" + str(bedIndex) + " is still wet enough. Humidity: " + str(humidity))
