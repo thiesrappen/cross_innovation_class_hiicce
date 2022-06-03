@@ -94,7 +94,6 @@ def updateConfiguration():
     DISPLAY_LOG = configParser['config']['DISPLAY_LOG']
 
 
-# main routine
 while True:
     log("Routine started.")
     updateConfiguration()
@@ -111,6 +110,7 @@ while True:
                 log("Flower box #" + str(bedIndex) + " is still wet enough. Humidity: " + str(humidity))
         log("Routine finished.\n")
         time.sleep(POLL_RATE_SECONDS)
+# main routine
 
 if __name__ == "__main__":
     main()
