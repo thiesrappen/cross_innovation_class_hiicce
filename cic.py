@@ -24,7 +24,6 @@ def measureHumidityLevels():
 
 # returns True, when watering was successful
 def watering(bedIndex):
-<<<<<<< refs/remotes/origin/main
     # check if container is not empty
     # TODO sensor-using
     waterLevel = 0.35
@@ -46,11 +45,6 @@ def watering(bedIndex):
         return True
     else: 
         return False
-=======
-    # do something
-    return True
-
->>>>>>> Changed language
 
 def log(message):
     if DISPLAY_LOG:
