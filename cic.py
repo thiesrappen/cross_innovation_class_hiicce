@@ -4,46 +4,48 @@ import random
 import configparser
 
 # configuration parameters
-poll_rate_seconds = 4
-number_of_flower_beds = 2
-minimum_soil_humidity = 0.5
-display_log = True
+POLL_RATE_SECONDS = 4
+FLOWER_BEDS = 2
+SOIL_HUMIDITY = 0.5
+DISPLAY_LOG = True
 
 
 # return a random value between 0 and 1 for testing purposes
-def measure_humidity_levels():
+def measureHumidityLevels():
     returns = []
-    for i in range(number_of_flower_beds):
+    for i in range(FLOWER_BEDS):
+        # TODO sensor-using
+        # Random values
         returns.append(round(random.uniform(0, 1), 2))
     return returns
 
 
 # returns True, when watering was successful
-def watering_routine(flower_bed_index):
+def watering(bedIndex):
     #do something
     return True
 
 
-def log(log_message):
-    if display_log:
-        print(time.asctime(), "-->", log_message)
+def log(message):
+    if DISPLAY_LOG:
+        print(time.asctime(), "-->", message)
 
 
 # main routine
 while True:
     log("Routine started.")
-    humidity_levels = measure_humidity_levels()
-    log("Humidity levels: " + str(humidity_levels))
-    one_container_watered = False
-    for flower_bed_index, flower_box_humidity in enumerate(humidity_levels):
-        if flower_box_humidity < minimum_soil_humidity:
-            log("Flower box #" + str(flower_bed_index) + " is to dry. Humidity: " + str(flower_box_humidity))
-            if watering_routine(flower_bed_index):
-                log("Flower bed #" + str(flower_bed_index) + " successfully watered.")
+    humidities = measureHumidityLevels()
+    log("Humidity levels: " + str(humidities))
+    for bedIndex, humidity in enumerate(humidities):
+        if humidity < SOIL_HUMIDITY:
+            # water the bed
+            log("Flower box #" + str(bedIndex) + " is to dry. Humidity: " + str(humidity))
+            if watering(bedIndex):
+                log("Flower bed #" + str(bedIndex) + " successfully watered.")
             else:
                 log("Error during watering")
         else:
             # ignore this flower bed
-            log("Flower box #" + str(flower_bed_index) + " is still wet enough. Humidity: " + str(flower_box_humidity))
+            log("Flower box #" + str(bedIndex) + " is still wet enough. Humidity: " + str(humidity))
     log("Routine finished.\n")
-    time.sleep(poll_rate_seconds)
+    time.sleep(POLL_RATE_SECONDS)
