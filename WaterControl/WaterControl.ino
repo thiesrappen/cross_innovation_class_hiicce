@@ -14,11 +14,11 @@ void setup() {
 }
 
 double measureHumidities(int index) {
-  return 0.0;
+  return 1.0;
 }
 
-int measureTemperature() {
-  return 15;
+float measureTemperature() {
+  // Order new sensor
 }
 
 // watering the flower-beds
@@ -30,19 +30,13 @@ void watering(int index){
   }
 }
 
-// update the screen
-void updateScreen(double temperature){
-  
-}
-
 void loop() {
   Serial.println("Routine started");
   int temperature = measureTemperature();
-  Serial.print("Temperatur: ");
-  Serial.println(temperature);
-  if (temperature >= MINIMUM_TEMPERATUR) {
+  if (temperature >= MINIMUM_TEMPERATURE) {
     for (int i = 0; i < sizeof(PUMPS)/sizeof(int); i++) {
     double humidity = measureHumidities(i);
+    Serial.print("Beet "); 
     Serial.print(i);
     if (humidity < SOIL_HUMIDITY_TARGET){
       Serial.print(" zu trocken: ");
@@ -53,6 +47,5 @@ void loop() {
     Serial.println(humidity);
     }
   }
-  updateScreening(temperature);
   delay(POLL_DELAY);
 }
