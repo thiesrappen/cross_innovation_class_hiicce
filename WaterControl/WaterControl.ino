@@ -2,7 +2,7 @@ const int PUMPS[] = {22, 23};
 const int POLL_DELAY = 10000;
 const double SOIL_HUMIDITY_TARGET = 0.5;
 const double MINIMUM_RESERVOIR_LEVEL = 0.2;
-const double MINIMUM_TEMPERATURE = 30;
+const int MINIMUM_TEMPERATURE = 4;
 const int WATERING_TIME = 5000;
 
 void setup() {
@@ -15,6 +15,10 @@ void setup() {
 
 double measureHumidities(int index) {
   return 0.0;
+}
+
+int measureTemperature() {
+  return 15;
 }
 
 // watering the flower-beds
@@ -33,7 +37,7 @@ void updateScreen(double temperature){
 
 void loop() {
   Serial.println("Routine started");
-  double temperature = getTemperatureReading();
+  int temperature = measureTemperature();
   Serial.print("Temperatur: ");
   Serial.println(temperature);
   if (temperature >= MINIMUM_TEMPERATUR) {
