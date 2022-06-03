@@ -1,46 +1,54 @@
-#define PUMP1 = 22
-#define PUMP2 = 23
-
-const int POLL_RATE_SECONDS = 10;
-const int FLOWER_BEDS = 2;
+const int PUMPS[] = {22, 23};
+const int POLL_DELAY = 10000;
 const double SOIL_HUMIDITY_TARGET = 0.5;
 const double MINIMUM_RESERVOIR_LEVEL = 0.2;
-const int VALVE_OPEN_TIME = 5;
+const double MINIMUM_TEMPERATURE = 30;
+const int WATERING_TIME = 5000;
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
-  pinMode(22, OUTPUT);
-  pinMode(23, OUTPUT);
-  //digitalWrite(PUMP1, LOW);
-  //digitalWrite(PUMP1, LOW);
+  pinMode(PUMPS[0], OUTPUT);
+  pinMode(PUMPS[1], OUTPUT);
+  digitalWrite(PUMPS[0], LOW);
+  digitalWrite(PUMPS[1], LOW);
 }
 
 double measureHumidities(int index) {
-  // measures individual himudity levels and stores them in an array
   return 0.0;
 }
 
+// watering the flower-beds
 void watering(int index){
-  Serial.println("kommt an");
-  digitalWrite(22, HIGH);
-  delay(1000);
-  digitalWrite(22, LOW);
-  delay(1000);
+  if (index < sizeof(PUMPS)) {
+    digitalWrite(PUMPS[index], HIGH);
+    delay(WATERING_TIME);
+    digitalWrite(PUMPS[index], LOW); 
+  }
+}
+
+// update the screen
+void updateScreen(double temperature){
+  
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   Serial.println("Routine started");
-  for (int i = 0; i<FLOWER_BEDS; i++) {
+  double temperature = getTemperatureReading();
+  Serial.print("Temperatur: ");
+  Serial.println(temperature);
+  if (temperature >= MINIMUM_TEMPERATUR) {
+    for (int i = 0; i < sizeof(PUMPS)/sizeof(int); i++) {
     double humidity = measureHumidities(i);
-    if (humidity<SOIL_HUMIDITY_TARGET){
-      Serial.println("Zu trocken");
+    Serial.print(i);
+    if (humidity < SOIL_HUMIDITY_TARGET){
+      Serial.print(" zu trocken: ");
       watering(i);
+    } else {
+      Serial.print(" nass genug: ");
+    }
+    Serial.println(humidity);
     }
   }
-  
-  //delay(5000);
+  updateScreening(temperature);
+  delay(POLL_DELAY);
 }
-
-
