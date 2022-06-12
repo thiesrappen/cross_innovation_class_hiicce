@@ -9,7 +9,7 @@
 //Durchlaufmenge nur fuer einen ANteil der Zeit eines Ventils.
 const int SOURCES[] = {22, 23}; 
 const bool IS_PUMP[] = {};
-const double PUMP_RATIO = 0.15; //Wenn ein Ventil 10s oeffnet, soll eine Pumpe 1.5s pumpen.
+const float PUMP_RATIO = 0.15; //Wenn ein Ventil 10s oeffnet, soll eine Pumpe 1.5s pumpen.
 
 
 const int HUMIDITIES[] = {0, 1};
@@ -25,7 +25,7 @@ const int LEVER_TRIGER = 11;
 //übersetzen.
 const int SESNOR_1_IDEAL = 180;
 const int SESNOR_2_IDEAL = 250;
-const double SOIL_HUMIDITY_TARGET = 0.25;
+const float SOIL_HUMIDITY_TARGET = 0.25;
 
 //Gibt die Tankhöhe in Centimetern an. Mit dem Ultraschallsensor lässt sich so die Füllhöhe des
 //Tanks bestimmen und ein Überfüllen des Tanks oder Trockenlaufen der Pumpen vermeiden.
@@ -53,14 +53,53 @@ void setup() {
   digitalWrite(SOURCES[0], LOW);
   digitalWrite(SOURCES[1], LOW);
 
+  //Der Ultraschallabstandssensor benoetigt einen Ausgangskanal, um ein Ultraschallsignal zu senden
+  //und einen Eingangskanal, um das Echo abzufangen. Ueber die Zeit zwischen den Signalen kann ein
+  //Abstand errechnet werden.
+  pinMode(LEVER_TRIGER, OUTPUT);
+  pinMode(LEVEL_ECHO, INPUT);
 
-  // TODO: Termometer, Ultraschall, Feuchtesensor
+  // TODO: Thermostat, Feuchtesensor
 }
 
 //Gibt den aktuellen Bodenfeuchtewert, abhängig vom angefragten Bettindex zurück. Der 
-double measureHumidity(int index) {
+float measureHumidity(int index) {
   return 0.9;
 }
+
+//Misst die Distanz bis zur Wasseroberflaeche und errechnet damit den Wasserstand im Tank. Da der
+//Sensor bei schnell wechselnden Abstaenden teilweise kurz den Maximalwert ausgibt, bevor ein neuer
+//Abstand gemessen werden kann, wird fuenffach gemessen und der stochastische Median ausgegeben. 
+//Auch wenn diese Methode keine Fehlerhafte Messungen ausschließen kann, ist sie fuer die
+//verwendete Hardware und dessen Messfehlerqueote mehr als ausreichend. 
+float mesureWaterLevel(){
+  long duration;
+
+  //Bei den standartmaeßigen
+  //fuenf Messungen mit einer Verzoegerung von 500 Millisekunden zwischen den Messungen wird ueber
+  //2,5 Sekunden hinweg gemessen. Selbst bei heftigen Aenderungen der Distanz benoetigte der Sensor
+  //nie mehr als 0,7 Sekunden, um wieder korrekt zu messen.
+  int measurements[5];
+  for (short int i = 0; i < sizeof(measurements)/sizeof(*measurements); i++){
+    //Zur Distanzmessung wird ein 10 Mikrosekunden langes Signal ueber den Lautsprecher emmittiert.
+    digitalWrite(LEVER_TRIGER, LOW);
+    delayMicroseconds(2);
+    digitalWrite(LEVER_TRIGER, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(LEVER_TRIGER, LOW);
+    duration = pulseIn(LEVEL_ECHO, HIGH);
+    measurements[i] = duration * 0.034 / 2; 
+
+      Serial.print("Distance: ");
+      Serial.print(measurements[i]);
+      Serial.println(" cm");
+
+    delay(500);
+  }
+
+
+
+} 
 
 // gives the Temperature and Humidity of the Environment
 int measureEnvironmental (float *temperature, float *humidity) {
@@ -86,7 +125,7 @@ void watering(int index){
 
 void loop() {
     Serial.println("Routine gestartet");
-
+    mesureWaterLevel();
     //Zu Beginn der Schleife werden Umgebungswerte geladen
     float enviromentAirTemperature = 0.0;
     float environmentAirHumidity = 0.0;
@@ -94,7 +133,7 @@ void loop() {
 
     if (enviromentAirTemperature >= MINIMUM_OPERATIONG_TEMPERATURE) {
       for (int i = 0; i < sizeof(SOURCES)/sizeof(int); i++) {
-      double humidity = measureHumidity(i);
+      float humidity = measureHumidity(i);
       Serial.print("Beet "); 
       Serial.print(i);
       if (emptyTank()) {
