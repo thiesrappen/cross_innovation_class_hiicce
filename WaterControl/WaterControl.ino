@@ -29,7 +29,11 @@ const float SOIL_HUMIDITY_TARGET = 0.25;
 
 //Gibt die Tankhöhe in Centimetern an. Mit dem Ultraschallsensor lässt sich so die Füllhöhe des
 //Tanks bestimmen und ein Überfüllen des Tanks oder Trockenlaufen der Pumpen vermeiden.
-const int TANK_HEIGHT = 18;
+const int RESERVOIR_HIGHT = 18;
+
+//Anzahl der Wiederholungen bei der Distanzmessung. Fuer Begruendung Methodenkommentar der
+//Distanzmessung beachten.
+const int DISTANCE_MESURMENT_REPETITIONS = 5;
 
 //todo
 const unsigned long POLL_DELAY = 10000;
@@ -76,10 +80,10 @@ float mesureWaterLevel(){
   long duration;
 
   //Bei den standartmaeßigen
-  //fuenf Messungen mit einer Verzoegerung von 500 Millisekunden zwischen den Messungen wird ueber
-  //2,5 Sekunden hinweg gemessen. Selbst bei heftigen Aenderungen der Distanz benoetigte der Sensor
-  //nie mehr als 0,7 Sekunden, um wieder korrekt zu messen.
-  int measurements[5];
+  //fuenf Messungen mit einer Verzoegerung von 100 Millisekunden zwischen den Messungen wird ueber
+  //0,5 Sekunden hinweg gemessen. Selbst bei heftigen Aenderungen der Distanz benoetigte der Sensor
+  //nie mehr als zwei Iterationen, um wieder korrekt zu messen.
+  float measurements[DISTANCE_MESURMENT_REPETITIONS];
   for (short int i = 0; i < sizeof(measurements)/sizeof(*measurements); i++){
     //Zur Distanzmessung wird ein 10 Mikrosekunden langes Signal ueber den Lautsprecher emmittiert.
     digitalWrite(LEVER_TRIGER, LOW);
@@ -89,22 +93,34 @@ float mesureWaterLevel(){
     digitalWrite(LEVER_TRIGER, LOW);
     duration = pulseIn(LEVEL_ECHO, HIGH);
     measurements[i] = duration * 0.034 / 2; 
-
-      Serial.print("Distance: ");
-      Serial.print(measurements[i]);
-      Serial.println(" cm");
-
-    delay(500);
+    delay(100);
   }
 
+  //Da die Anzahl der erhobenen Messwerte nur Sensorbedings ueberhaupt groeßer als eins ist, wird
+  //zum sortieren hier nur ein einfacher Bubble-Sort Algorythmus verwendet. Komplexitaeten und
+  //Laufzeitverhalten spielen bei dieser Datenmenge noch keine Rolle.
+  for (short int i = 0; i < sizeof(measurements)/sizeof(*measurements) - 1; i++){
+    for (short int j = 0; j < sizeof(measurements)/sizeof(*measurements) - i - 1; i++){
+      if(measurements[j] > measurements[j+1]){
+        float temp = measurements[j];
+        measurements[j] = measurements[j+1];
+        measurements[j+1] = temp;
+      }
+    }
+  }
 
-
+  //Nun wird der Median ermittelt und von der Reservoirhoehe abgezogen. Je nach Messungsanzahl
+  //(gerade/ungerade) ist die Methodik zur Bestimmung des Medians leicht anders. So wird entweder
+  //das mittlere Elemnt gewaehlt, oder der durchschnitt der beiden mittleren Elemente, wenn es eine
+  //gerade Anzahl Elemente gibt.
+  if (DISTANCE_MESURMENT_REPETITIONS % 2 == 0){
+    return RESERVOIR_HIGHT - (measurements[DISTANCE_MESURMENT_REPETITIONS/2] + measurements[(DISTANCE_MESURMENT_REPETITIONS+1)/2])/2;
+  } else {
+    return RESERVOIR_HIGHT - measurements[DISTANCE_MESURMENT_REPETITIONS/2];
+  }
 } 
 
-// gives the Temperature and Humidity of the Environment
 int measureEnvironmental (float *temperature, float *humidity) {
-  // TODO: funktioniert noch nicht
-  //return dht_sensor.measure( temperature, humidity );
   return 1;
 }
 
@@ -125,7 +141,7 @@ void watering(int index){
 
 void loop() {
     Serial.println("Routine gestartet");
-    mesureWaterLevel();
+    Serial. println(mesureWaterLevel());
     //Zu Beginn der Schleife werden Umgebungswerte geladen
     float enviromentAirTemperature = 0.0;
     float environmentAirHumidity = 0.0;
