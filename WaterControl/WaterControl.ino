@@ -11,7 +11,7 @@ const int SOURCES[] = {22, 23};
 const bool IS_PUMP[] = {};
 const float PUMP_RATIO = 0.15; // Wenn ein Ventil 10s oeffnet, soll eine Pumpe 1.5s pumpen.
 
-const int HUMIDITIES[] = {0, 1};
+const int SOIL_HUMIDITY_SENSORS[] = {A0, A1};
 const int environmentSensor = 8;
 const int LEVEL_ECHO = 10;
 const int LEVER_TRIGER = 11;
@@ -22,9 +22,8 @@ const int LEVER_TRIGER = 11;
 // konsistentere Ergebnisse liefern und so globale Bereichsdefinitionen erlauben.
 // In der Zwischenzeit wird ein Hilfsmethode die Werte der Sensoren auf einen globalen Richtwert
 //übersetzen.
-const int SESNOR_1_IDEAL = 180;
-const int SESNOR_2_IDEAL = 250;
-const float SOIL_HUMIDITY_TARGET = 0.25;
+const int SENSOR_1_IDEAL = 180;
+const int SENSOR_2_IDEAL = 250;
 
 // Gibt die Tankhöhe in Centimetern an. Mit dem Ultraschallsensor lässt sich so die Füllhöhe des
 // Tanks bestimmen und ein Überfüllen des Tanks oder Trockenlaufen der Pumpen vermeiden.
@@ -35,10 +34,10 @@ const int RESERVOIR_HIGHT = 18;
 const int DISTANCE_MESURMENT_REPETITIONS = 5;
 
 // Verzoegerung zwischen den Durchlaeufen in ms.
-const unsigned long POLL_DELAY = 20000;
+const unsigned long POLL_DELAY = 10000;
 
 // Oeffnungszeiten fuer Ventile, wenn bewaessert werden soll. Fuer Pumpen den Faktor beachten.
-const int WATERING_TIME = 10000;
+const int WATERING_TIME = 2500;
 
 // Um das Gießen bei Frost zu verhindern (Die Pumpe würde möglicherweise beim Versuch, Eis zu
 // foerdern, trockenlaufen).
@@ -56,7 +55,8 @@ const int MINIMUM_WATER_LEVEL = 3;
 // liefern kann und nicht unter Wasser steht.
 const int MAXIMUM_WATER_LEVEL = 15;
 
-void setup() {
+void setup()
+{
   // Für Entwicklungszwecke wird eine serialle Schnittstelle mit dem Arduino eröffnet. Alle Ausgaben
   // auf dieser Schnittstelle lassen sich mit einem entsprechnden Tool auslesen.
   Serial.begin(9600);
@@ -66,6 +66,7 @@ void setup() {
   // gesetzt.
   pinMode(SOURCES[0], OUTPUT);
   pinMode(SOURCES[1], OUTPUT);
+
   digitalWrite(SOURCES[0], LOW);
   digitalWrite(SOURCES[1], LOW);
 
@@ -78,9 +79,17 @@ void setup() {
   // TODO: Thermostat, Feuchtesensor
 }
 
-// Gibt den aktuellen Bodenfeuchtewert, abhängig vom angefragten Bettindex zurück. Der
-float measureSoilHumidity(int index) {
-  return 0.9;
+// Gibt den aktuellen Bodenfeuchtewert, abhängig vom angefragten Bettindex zurück. Der Wert wird
+// aufgrund der unpraeszisen und inkonsistenten Sensoren angepasst.
+bool waterRequired(int index)
+{
+  switch (index)
+  {
+  case 0:
+    return analogRead(A0) < SENSOR_1_IDEAL;
+  case 1:
+    return analogRead(A1) < SENSOR_2_IDEAL;
+  }
 }
 
 // Misst die Distanz bis zur Wasseroberflaeche und errechnet damit den Wasserstand im Tank. Da der
@@ -88,7 +97,8 @@ float measureSoilHumidity(int index) {
 // Abstand gemessen werden kann, wird fuenffach gemessen und der stochastische Median ausgegeben.
 // Auch wenn diese Methode keine Fehlerhafte Messungen ausschließen kann, ist sie fuer die
 // verwendete Hardware und dessen Messfehlerqueote mehr als ausreichend.
-float measureWaterLevel() {
+float measureWaterLevel()
+{
   long duration;
 
   // Bei den standartmaeßigen
@@ -96,7 +106,8 @@ float measureWaterLevel() {
   // 0,5 Sekunden hinweg gemessen. Selbst bei heftigen Aenderungen der Distanz benoetigte der Sensor
   // nie mehr als zwei Iterationen, um wieder korrekt zu messen.
   float measurements[DISTANCE_MESURMENT_REPETITIONS];
-  for (short int i = 0; i < sizeof(measurements) / sizeof(*measurements); i++) {
+  for (short int i = 0; i < sizeof(measurements) / sizeof(*measurements); i++)
+  {
     // Zur Distanzmessung wird ein 10 Mikrosekunden langes Signal ueber den Lautsprecher emmittiert.
     digitalWrite(LEVER_TRIGER, LOW);
     delayMicroseconds(2);
@@ -111,9 +122,12 @@ float measureWaterLevel() {
   // Da die Anzahl der erhobenen Messwerte nur Sensorbedings ueberhaupt groeßer als eins ist, wird
   // zum sortieren hier nur ein einfacher Bubble-Sort Algorythmus verwendet. Komplexitaeten und
   // Laufzeitverhalten spielen bei dieser Datenmenge noch keine Rolle.
-  for (short int i = 0; i < sizeof(measurements) / sizeof(*measurements) - 1; i++) {
-    for (short int j = 0; j < sizeof(measurements) / sizeof(*measurements) - i - 1; i++) {
-      if (measurements[j] > measurements[j + 1]) {
+  for (short int i = 0; i < sizeof(measurements) / sizeof(*measurements) - 1; i++)
+  {
+    for (short int j = 0; j < sizeof(measurements) / sizeof(*measurements) - i - 1; i++)
+    {
+      if (measurements[j] > measurements[j + 1])
+      {
         float temp = measurements[j];
         measurements[j] = measurements[j + 1];
         measurements[j + 1] = temp;
@@ -125,86 +139,112 @@ float measureWaterLevel() {
   // (gerade/ungerade) ist die Methodik zur Bestimmung des Medians leicht anders. So wird entweder
   // das mittlere Elemnt gewaehlt, oder der durchschnitt der beiden mittleren Elemente, wenn es
   // eine gerade Anzahl Elemente gibt.
-  if (DISTANCE_MESURMENT_REPETITIONS % 2 == 0) {
+  if (DISTANCE_MESURMENT_REPETITIONS % 2 == 0)
+  {
     return RESERVOIR_HIGHT - (measurements[DISTANCE_MESURMENT_REPETITIONS / 2] + measurements[(DISTANCE_MESURMENT_REPETITIONS + 1) / 2]) / 2;
-  } else {
+  }
+  else
+  {
     return RESERVOIR_HIGHT - measurements[DISTANCE_MESURMENT_REPETITIONS / 2];
   }
 }
 
-int measureEnvironmental(float *temperature, float *humidity) {
+int measureEnvironmental(float *temperature, float *humidity)
+{
   return 1;
 }
 
-// Routine zum Bewaessern eines Beetes
-void watering(int index) {
-  if (index < sizeof(SOURCES) / sizeof(int)) {
-    digitalWrite(SOURCES[index], HIGH);
+// Routine zum Bewaessern eines Beetes. Anhand eines Mappings wird geprueft, ob das entsprechende Beet via Ventil oder Pumpe angestuert wird.
+// todo above (Mapping), einbauen der Ratio-Multiplikators
+void watering(int source)
+{
+  if (source < sizeof(SOURCES) / sizeof(int))
+  {
+    digitalWrite(SOURCES[source], HIGH);
     delay(WATERING_TIME);
-    digitalWrite(SOURCES[index], LOW);
+    digitalWrite(SOURCES[source], LOW);
   }
 }
 
-float measureAirTemperature() {
+float measureAirTemperature()
+{
   return 21.6;
 }
 
-float measureAirHumidity() {
-  return 55.2;
+float measureAirHumidity()
+{
+  return 45.2;
 }
 
-void openInlet() {
-  //todo
+void openInlet()
+{
+  // todo
 }
 
-void closeInlet() {
-  //todo
+void closeInlet()
+{
+  // todo
 }
 
-void loop() {
+void loop()
+{
+  // Das Warten zu Beginn der Schleife statt am Ende ermoeglicht das springen aus der Schleife mit
+  // "Return", wenn festgestellt wird, dass ein weiteres Ausfuehren keinen Zweck hat.
+  delay(POLL_DELAY);
+
   Serial.println("Routine gestartet");
 
   // Als erstes wird die vorhandene Wassermenge geprueft. Ist kein Wasser vorhanden, kann der Rest
   // der Routine uebersprungen werden. Dies muss unabhaengig von der Temeperaturpruefung immer
   // geschehen, da eventuelle Zulaufventile trozdem gesteuert werden sollen.
   float waterLevel = measureWaterLevel();
-  if (waterLevel < MINIMUM_WATER_LEVEL) {
+  if (waterLevel >= MAXIMUM_WATER_LEVEL)
+  {
+    Serial.println("Maximaler Wasserstand erreicht/ueberschritten. Einlassventil geschlossen.");
+    closeInlet();
+  }
+  
+  if (waterLevel < MINIMUM_WATER_LEVEL)
+  {
+    Serial.println("Minimaler Wasserstand unterschritten. Einlassventil geoeffnet. Routine beendet");
     openInlet();
     return;
-  }
-  else if (waterLevel >= MAXIMUM_WATER_LEVEL) {
-    closeInlet();
   }
 
   // Nachfolgend wird die Umgebungstemperatur geprueft
   float airTemperature = measureAirTemperature();
-  if (airTemperature < MINIMUM_OPERATIONG_TEMPERATURE) {
+  if (airTemperature < MINIMUM_OPERATIONG_TEMPERATURE)
+  {
     Serial.print("Temperatur fuer Bewaesserung zu niedrig: °C ");
     Serial.println(airTemperature);
     return;
   }
 
-  if (measureAirHumidity() > MAXIMUM_AIR_HUMIDITY) {
+  if (measureAirHumidity() >= MAXIMUM_AIR_HUMIDITY)
+  {
+    Serial.println("Maximale Leuftfeuchte erreicht/ueberschritten. Routine beendet.");
     return;
   }
 
-  for (int i = 0; i < sizeof(SOURCES) / sizeof(int); i++) {
-    float tempHumidity = measureSoilHumidity(i);
+  for (int i = 0; i < sizeof(SOURCES) / sizeof(int); i++)
+  {
     Serial.print("Beet ");
     Serial.print(i);
-    if (tempHumidity < SOIL_HUMIDITY_TARGET) {
-      Serial.print(" zu trocken: ");
+    if (waterRequired(i))
+    {
+      Serial.println(" zu trocken.");
       watering(i);
-    } else {
-      Serial.print(" nass genug: ");
     }
-    Serial.println(tempHumidity);
+    else
+    {
+      Serial.println(" feucht genug.");
+    }
   }
 
   // Da die Anwendung sequentiell ausgeführt wird und es keine parallelen Aufgaben gibt, die
   // ausgeführt werden könnten, wird an dieser Stelle ein delay verwendet, um einem eventuell
   // frisch gewässerten Beet die Zeit zu geben, das erhaltene Wasser zu verteilen und am
   // Feuchtigkeitssensor eine Veränderung zu erzeugen.
-  delay(POLL_DELAY);
-  Serial.println();
+
+  Serial.println("");
 }
