@@ -1,3 +1,14 @@
+#include <Wire.h>
+#include <hd44780.h>
+#include <hd44780ioClass/hd44780_I2Cexp.h>
+
+// Das Display wird standartmaessig auf den I2C-Kanaelen des Arduino erwartet. Fuer den Mega sind
+// das 20 und 21.
+hd44780_I2Cexp lcd;
+
+const int DISP_COLUMNS = 16;
+const int DISP_ROWS = 2;
+
 // Belegung der Pins des Arduino. Damit spaeter leicht die Pin-Belgung angepasst werden kann, sollte
 // die Software auf anderer Hardware ausgefuehrt werden, sind die Analogen und digitalen Pins, die
 // zum Ansprechen der Hardware verwendet werden im folgenden als Konstanten definiert.
@@ -61,6 +72,9 @@ void setup()
   // auf dieser Schnittstelle lassen sich mit einem entsprechnden Tool auslesen.
   Serial.begin(9600);
 
+  // Initialisieren des LCD-Displays auf Breihe und Höhe
+  lcd.begin(DISP_COLUMNS, DISP_ROWS);
+
   // Die Pins der Wasserquellen werden in den Output-Modus versetzt. Dies bedeutet, dass nun HIGH-
   // oder LOW-Signale über diese Ports gesendet werden können. Initial werden beide Quellen auf LOW
   // gesetzt.
@@ -77,6 +91,32 @@ void setup()
   pinMode(LEVEL_ECHO, INPUT);
 
   // TODO: Thermostat, Feuchtesensor
+}
+
+// Wendet korrektes Padding an und schreibt den input links auf die angegebene Zeile des LCDs
+void lcdWriteLeft(String input, int row){
+  lcd.setCursor(0, row);
+  input = input + "       ";
+  lcd.print(input.substring(0,7));
+}
+
+// Wendet korrektes Padding an und schreibt den input links auf die angegebene Zeile des LCDs
+void lcdWriteRight(String input, int row){
+  lcd.setCursor(9, row);
+  input =  "       " + input.substring(0,7);
+  lcd.print(input.substring(input.length() - 7));
+}
+
+// Ueberschreibt im Fehlerfall bestehende Ausgaben und zeit fuenf Sekunden lang ein Meldung an.
+// Durch die Aufloesung des Displays sollte die Nachricht maximal 32 Zeichen lang sein.
+void lcdPrintError(String input){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(input.substring(0,16));
+  lcd.setCursor(0,1);
+  lcd.print(input.substring(16));
+  delay(5000);
+  lcd.clear();
 }
 
 // Gibt den aktuellen Bodenfeuchtewert, abhängig vom angefragten Bettindex zurück. Der Wert wird
