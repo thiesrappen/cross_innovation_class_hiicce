@@ -206,11 +206,6 @@ float measureWaterLevel()
   }
 }
 
-int measureEnvironmental(float *temperature, float *humidity)
-{
-  return 1;
-}
-
 // Routine zum Bewaessern eines Beetes. Anhand eines Mappings wird geprueft, ob das entsprechende Beet via Ventil oder Pumpe angestuert wird.
 // todo above (Mapping), einbauen der Ratio-Multiplikators
 void watering(int source)
@@ -223,24 +218,35 @@ void watering(int source)
   }
 }
 
+// Für den Prototypen werden hier vorsert nur Dummy-Werte zurückgegeben. Später würde das Messen
+// der Temperatur verhindern, dass bei Frostgefahr gegosssen würde.
 float measureAirTemperature()
 {
   return 21.6;
 }
 
+// Für den Prototypen werden hier vorsert nur Dummy-Werte zurückgegeben. Später würde das mesen der
+// Luftfeuchtigkeit dazu füren, dass bei zu hoher Luftfeuchte gegossen würde, um ein Schimmeln der
+// Pflanzen zu verhindern.
 float measureAirHumidity()
 {
   return 45.2;
 }
 
+// Diese Methode würde bei einer echten Installation das Einlassventil öffnen, sodass Wasser in den
+// Speicher fließen kann. Da der Prototyp nicht an ein Fallrohr angeschlossen ist, findet hier
+// stellvertretend nur eine Log-Ausgabe statt.
 void openInlet()
 {
-  // todo
+  Serial.println("Einlassvetil geöffnet.");
 }
 
+// Diese Methode würde bei einer echten Installation das Einlassventil schließen, wenn sich
+// ausreichend/zu viel Wasser im Reservoir befinden würde. Da der Prototyp nicht an ein
+// Fallrohr angeschlossen ist, findet hier stellvertretend nur eine Log-Ausgabe statt.
 void closeInlet()
 {
-  // todo
+  Serial.println("Einlassventil geschlossen.");
 }
 
 // Die einfache delay-Methode wird um einen "Wrapper" erweitert, damit parallel Ausgaben auf dem
@@ -264,6 +270,10 @@ void delayWithPrint(int seconds){
 
 void loop()
 {
+  // Da die Anwendung sequentiell ausgeführt wird und es keine parallelen Aufgaben gibt, die
+  // ausgeführt werden könnten, wird an dieser Stelle ein delay verwendet, um einem eventuell
+  // frisch gewässerten Beet die Zeit zu geben, das erhaltene Wasser zu verteilen und am
+  // Feuchtigkeitssensor eine Veränderung zu erzeugen.
   // Das Warten zu Beginn der Schleife statt am Ende ermoeglicht das springen aus der Schleife mit
   // "Return", wenn festgestellt wird, dass ein weiteres Ausfuehren keinen Zweck hat.
   delayWithPrint(POLL_DELAY);
@@ -322,11 +332,6 @@ void loop()
       Serial.println(" feucht genug.");
     }
   }
-
-  // Da die Anwendung sequentiell ausgeführt wird und es keine parallelen Aufgaben gibt, die
-  // ausgeführt werden könnten, wird an dieser Stelle ein delay verwendet, um einem eventuell
-  // frisch gewässerten Beet die Zeit zu geben, das erhaltene Wasser zu verteilen und am
-  // Feuchtigkeitssensor eine Veränderung zu erzeugen.
 
   Serial.println("");
 }
