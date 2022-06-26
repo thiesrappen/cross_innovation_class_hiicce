@@ -130,11 +130,21 @@ void lcdPrintError(String input){
 // aufgrund der unpraeszisen und inkonsistenten Sensoren angepasst.
 bool waterRequired(int index)
 {
+// Temporaeres Abspeichern der Ausleseergebnisse, damit diese ausgegeben werden koennen.
+int result;
+String resultAsString = "";
+
   switch (index)
   {
   case 0:
+    result = analogRead(A0);
+    resultAsString = resultAsString.concat(result);
+    lcdWriteLeft(resultAsString, 0);
     return analogRead(A0) < SENSOR_1_IDEAL;
   case 1:
+    result = analogRead(A1);
+    resultAsString = resultAsString.concat(result);
+    lcdWriteRight(resultAsString, 0);
     return analogRead(A1) < SENSOR_2_IDEAL;
   }
 }
