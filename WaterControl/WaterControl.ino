@@ -6,6 +6,7 @@
 // das 20 und 21.
 hd44780_I2Cexp lcd;
 
+// Die technischen Schranken des Displays
 const int DISP_COLUMNS = 16;
 const int DISP_ROWS = 2;
 
@@ -22,8 +23,14 @@ const int SOURCES[] = {22, 23};
 const bool IS_PUMP[] = {};
 const float PUMP_RATIO = 0.15; // Wenn ein Ventil 10s oeffnet, soll eine Pumpe 1.5s pumpen.
 
+// Die physischen Anschlüsse der Feuchte-Sensoren (Analog 0 und Analog 1)
 const int SOIL_HUMIDITY_SENSORS[] = {A0, A1};
+
+// Der Output-Port des Temperatur- und Luftfeuchtesensors.
 const int environmentSensor = 8;
+
+// DIe physischen Anschlüsse des Distanzmessers, ein Trigger-Kanal, zum senden eines akustischen
+// Signals und ein Echo-Kanal, auf dem auf das Echo des ausgesandten Signals gewartet wird.
 const int LEVEL_ECHO = 10;
 const int LEVER_TRIGER = 11;
 
@@ -44,8 +51,8 @@ const int RESERVOIR_HIGHT = 18;
 // Distanzmessung beachten.
 const int DISTANCE_MESURMENT_REPETITIONS = 5;
 
-// Verzoegerung zwischen den Durchlaeufen in ms.
-const unsigned long POLL_DELAY = 10000;
+// Verzoegerung zwischen den Durchlaeufen in Sekunden.
+const unsigned long POLL_DELAY = 10;
 
 // Oeffnungszeiten fuer Ventile, wenn bewaessert werden soll. Fuer Pumpen den Faktor beachten.
 const int WATERING_TIME = 2500;
@@ -60,7 +67,7 @@ const float MAXIMUM_AIR_HUMIDITY = 99.9;
 
 // Beschreibt die minimale Wasserhoehe, bei der Pumpen noch foerdern koennen/Ventileingaenge noch
 // unterhalb der Wasseroberflaeche sind. Die Angabe ist in cm.
-const int MINIMUM_WATER_LEVEL = 3;
+const int MINIMUM_WATER_LEVEL = 5;
 
 // Beschreibt die maximale Wasserhoehe, bei der der Ultraschallsensor noch zuverlaessig Ergebnisse
 // liefern kann und nicht unter Wasser steht.
@@ -100,7 +107,7 @@ void lcdWriteLeft(String input, int row){
   lcd.print(input.substring(0,7));
 }
 
-// Wendet korrektes Padding an und schreibt den input links auf die angegebene Zeile des LCDs
+// Wendet korrektes Padding an und schreibt den input rechts auf die angegebene Zeile des LCDs
 void lcdWriteRight(String input, int row){
   lcd.setCursor(9, row);
   input =  "       " + input.substring(0,7);
@@ -226,11 +233,30 @@ void closeInlet()
   // todo
 }
 
+// Die einfache delay-Methode wird um einen "Wrapper" erweitert, damit parallel Ausgaben auf dem
+// Display einen Countdown simulieren.
+void delayWithPrint(int seconds){
+  String tmp;
+  while(seconds > 0){
+
+  // Concat erlaubt das einfache parsen von Integer nach String 
+    tmp = "";
+    tmp.concat(seconds);
+    lcdWriteRight(tmp, 1);
+
+    // Eine Sekunde warten
+    delay(1000);
+
+    // Internen Zaehler reduzieren
+    seconds = seconds -1 ;
+  }
+}
+
 void loop()
 {
   // Das Warten zu Beginn der Schleife statt am Ende ermoeglicht das springen aus der Schleife mit
   // "Return", wenn festgestellt wird, dass ein weiteres Ausfuehren keinen Zweck hat.
-  delay(POLL_DELAY);
+  delayWithPrint(POLL_DELAY);
 
   Serial.println("Routine gestartet");
 
@@ -238,6 +264,12 @@ void loop()
   // der Routine uebersprungen werden. Dies muss unabhaengig von der Temeperaturpruefung immer
   // geschehen, da eventuelle Zulaufventile trozdem gesteuert werden sollen.
   float waterLevel = measureWaterLevel();
+
+  // Concat erlaubt das einfache Konvertieren eines Floats in einen String.
+  String e = "";
+  e = e.concat(waterLevel);
+  lcdWriteLeft(e, 1);
+
   if (waterLevel >= MAXIMUM_WATER_LEVEL)
   {
     Serial.println("Maximaler Wasserstand erreicht/ueberschritten. Einlassventil geschlossen.");
