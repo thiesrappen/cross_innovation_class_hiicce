@@ -55,7 +55,7 @@ const int DISTANCE_MESURMENT_REPETITIONS = 5;
 const unsigned long POLL_DELAY = 10;
 
 // Oeffnungszeiten fuer Ventile, wenn bewaessert werden soll. Fuer Pumpen den Faktor beachten.
-const int WATERING_TIME = 2000;
+const int WATERING_TIME = 5000;
 
 // Um das Gießen bei Frost zu verhindern (Die Pumpe würde möglicherweise beim Versuch, Eis zu
 // foerdern, trockenlaufen).
