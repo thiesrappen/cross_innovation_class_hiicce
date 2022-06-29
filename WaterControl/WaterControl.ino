@@ -10,11 +10,11 @@ hd44780_I2Cexp lcd;
 const int DISP_COLUMNS = 16;
 const int DISP_ROWS = 2;
 
-// Belegung der Pins des Arduino. Damit spaeter leicht die Pin-Belgung angepasst werden kann, sollte
+// Belegung der Pins des Arduinos. Damit spaeter leicht die Pin-Belgung angepasst werden kann, sollte
 // die Software auf anderer Hardware ausgefuehrt werden, sind die Analogen und digitalen Pins, die
 // zum Ansprechen der Hardware verwendet werden im folgenden als Konstanten definiert.
 
-// Der Prototy wird durch Pumpen gesteuert. In einer spaeteren Version sind jedoch auch Tanks, welche
+// Der Prototyp wird durch Pumpen gesteuert. In einer spaeteren Version sind jedoch auch Tanks, welche
 // auf den Tonnen montiert sind denkbar. Diese werden dann durch Ventile gesteuert, welche die
 // Schwerkraft zur Verteilung des Wassers nutzen. Das Boolean-Array haelt fest, ob es sich bei einer
 // Wasserquelle um eine Pumpe oder ein Ventil haelt. Pumpen oeffnen dabei durch die hoehere
@@ -29,7 +29,7 @@ const int SOIL_HUMIDITY_SENSORS[] = {A0, A1};
 // Der Output-Port des Temperatur- und Luftfeuchtesensors.
 const int environmentSensor = 8;
 
-// DIe physischen Anschlüsse des Distanzmessers, ein Trigger-Kanal, zum senden eines akustischen
+// Die physischen Anschlüsse des Distanzmessers, ein Trigger-Kanal, zum senden eines akustischen
 // Signals und ein Echo-Kanal, auf dem auf das Echo des ausgesandten Signals gewartet wird.
 const int LEVEL_ECHO = 10;
 const int LEVER_TRIGER = 11;
@@ -45,7 +45,7 @@ const int SENSOR_2_IDEAL = 250;
 
 // Gibt die Tankhöhe in Centimetern an. Mit dem Ultraschallsensor lässt sich so die Füllhöhe des
 // Tanks bestimmen und ein Überfüllen des Tanks oder Trockenlaufen der Pumpen vermeiden.
-const int RESERVOIR_HIGHT = 18;
+const int RESERVOIR_HIGHT = 30;
 
 // Anzahl der Wiederholungen bei der Distanzmessung. Fuer Begruendung Methodenkommentar der
 // Distanzmessung beachten.
@@ -55,7 +55,7 @@ const int DISTANCE_MESURMENT_REPETITIONS = 5;
 const unsigned long POLL_DELAY = 10;
 
 // Oeffnungszeiten fuer Ventile, wenn bewaessert werden soll. Fuer Pumpen den Faktor beachten.
-const int WATERING_TIME = 2500;
+const int WATERING_TIME = 200;
 
 // Um das Gießen bei Frost zu verhindern (Die Pumpe würde möglicherweise beim Versuch, Eis zu
 // foerdern, trockenlaufen).
@@ -67,11 +67,11 @@ const float MAXIMUM_AIR_HUMIDITY = 99.9;
 
 // Beschreibt die minimale Wasserhoehe, bei der Pumpen noch foerdern koennen/Ventileingaenge noch
 // unterhalb der Wasseroberflaeche sind. Die Angabe ist in cm.
-const int MINIMUM_WATER_LEVEL = 5;
+const int MINIMUM_WATER_LEVEL = 3;
 
 // Beschreibt die maximale Wasserhoehe, bei der der Ultraschallsensor noch zuverlaessig Ergebnisse
 // liefern kann und nicht unter Wasser steht.
-const int MAXIMUM_WATER_LEVEL = 15;
+const int MAXIMUM_WATER_LEVEL = 25;
 
 void setup()
 {
@@ -131,21 +131,18 @@ void lcdPrintError(String input){
 bool waterRequired(int index)
 {
 // Temporaeres Abspeichern der Ausleseergebnisse, damit diese ausgegeben werden koennen.
-int result;
-String resultAsString = "";
+long result;
 
   switch (index)
   {
   case 0:
     result = analogRead(A0);
-    resultAsString = resultAsString.concat(result);
-    lcdWriteLeft(resultAsString, 0);
-    return analogRead(A0) < SENSOR_1_IDEAL;
+    lcdWriteLeft(String(result*100/SENSOR_1_IDEAL) + "%", 0);
+    return result < SENSOR_1_IDEAL;
   case 1:
     result = analogRead(A1);
-    resultAsString = resultAsString.concat(result);
-    lcdWriteRight(resultAsString, 0);
-    return analogRead(A1) < SENSOR_2_IDEAL;
+    lcdWriteRight(String(result*100/SENSOR_2_IDEAL) + "%", 0);
+    return result < SENSOR_2_IDEAL;
   }
 }
 
@@ -238,7 +235,7 @@ float measureAirHumidity()
 // stellvertretend nur eine Log-Ausgabe statt.
 void openInlet()
 {
-  Serial.println("Einlassvetil geöffnet.");
+  Serial.println("Einlassvetil öffnen...");
 }
 
 // Diese Methode würde bei einer echten Installation das Einlassventil schließen, wenn sich
@@ -246,7 +243,7 @@ void openInlet()
 // Fallrohr angeschlossen ist, findet hier stellvertretend nur eine Log-Ausgabe statt.
 void closeInlet()
 {
-  Serial.println("Einlassventil geschlossen.");
+  Serial.println("Einlassventil schließen...");
 }
 
 // Die einfache delay-Methode wird um einen "Wrapper" erweitert, damit parallel Ausgaben auf dem
@@ -292,13 +289,15 @@ void loop()
 
   if (waterLevel >= MAXIMUM_WATER_LEVEL)
   {
-    Serial.println("Maximaler Wasserstand erreicht/ueberschritten. Einlassventil geschlossen.");
+    Serial.print("Maximaler Wasserstand erreicht/ ueberschritten. Einlassventil geschlossen! -> ");
+    Serial.println(waterLevel);
     closeInlet();
   }
   
   if (waterLevel < MINIMUM_WATER_LEVEL)
   {
-    Serial.println("Minimaler Wasserstand unterschritten. Einlassventil geoeffnet. Routine beendet");
+    Serial.print("Minimaler Wasserstand unterschritten. Einlassventil geoeffnet. Routine beendet! -> ");
+    Serial.println(waterLevel);
     openInlet();
     return;
   }
@@ -307,8 +306,9 @@ void loop()
   float airTemperature = measureAirTemperature();
   if (airTemperature < MINIMUM_OPERATIONG_TEMPERATURE)
   {
-    Serial.print("Temperatur fuer Bewaesserung zu niedrig: °C ");
-    Serial.println(airTemperature);
+    Serial.print("Temperatur fuer Bewaesserung zu niedrig:  ");
+    Serial.print(airTemperature);
+    Serial.println("°C");
     return;
   }
 
