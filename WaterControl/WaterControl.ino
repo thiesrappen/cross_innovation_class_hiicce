@@ -55,7 +55,7 @@ const int DISTANCE_MESURMENT_REPETITIONS = 5;
 const unsigned long POLL_DELAY = 10;
 
 // Oeffnungszeiten fuer Ventile, wenn bewaessert werden soll. Fuer Pumpen den Faktor beachten.
-const int WATERING_TIME = 200;
+const int WATERING_TIME = 2000;
 
 // Um das Gießen bei Frost zu verhindern (Die Pumpe würde möglicherweise beim Versuch, Eis zu
 // foerdern, trockenlaufen).
@@ -249,13 +249,9 @@ void closeInlet()
 // Die einfache delay-Methode wird um einen "Wrapper" erweitert, damit parallel Ausgaben auf dem
 // Display einen Countdown simulieren.
 void delayWithPrint(int seconds){
-  String tmp;
   while(seconds > 0){
 
-  // Concat erlaubt das einfache parsen von Integer nach String 
-    tmp = "";
-    tmp.concat(seconds);
-    lcdWriteRight(tmp, 1);
+    lcdWriteRight(String(seconds) + " sek", 1);
 
     // Eine Sekunde warten
     delay(1000);
@@ -282,10 +278,7 @@ void loop()
   // geschehen, da eventuelle Zulaufventile trozdem gesteuert werden sollen.
   float waterLevel = measureWaterLevel();
 
-  // Concat erlaubt das einfache Konvertieren eines Floats in einen String.
-  String e = "";
-  e = e.concat(waterLevel);
-  lcdWriteLeft(e, 1);
+  lcdWriteLeft(String(waterLevel*100/MAXIMUM_WATER_LEVEL) + "%", 1);
 
   if (waterLevel >= MAXIMUM_WATER_LEVEL)
   {
@@ -298,6 +291,8 @@ void loop()
   {
     Serial.print("Minimaler Wasserstand unterschritten. Einlassventil geoeffnet. Routine beendet! -> ");
     Serial.println(waterLevel);
+    lcdWriteLeft("Tank", 0);
+    lcdWriteRight("leer!", 0);
     openInlet();
     return;
   }
