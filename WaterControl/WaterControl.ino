@@ -291,8 +291,9 @@ void loop()
   {
     Serial.print("Minimaler Wasserstand unterschritten. Einlassventil geoeffnet. Routine beendet! -> ");
     Serial.println(waterLevel);
-    lcdWriteLeft("Tank", 0);
-    lcdWriteRight("leer!", 0);
+    lcdPrintError("Tank leer!");
+    //lcdWriteLeft("Tank", 0);
+    //lcdWriteRight("leer!", 0);
     openInlet();
     return;
   }
